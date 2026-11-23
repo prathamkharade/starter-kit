@@ -17,7 +17,7 @@ EXPOSE 8080
 ENTRYPOINT ["/app"]
 CMD ["serve"]
 
-FROM alpine:3.22 AS worker
+FROM alpine:3.24 AS worker
 RUN apk add --no-cache ffmpeg vips-tools vips-heif ghostscript ca-certificates tzdata \
  && adduser -D -H -u 10001 app
 COPY --from=build /out/app /app
