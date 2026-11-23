@@ -1,0 +1,58 @@
+name: app
+description: Cross-platform client (web, Android, iOS) built from the starter kit.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  flutter_web_plugins:
+    sdk: flutter
+  intl: any
+
+  # required by the kit's conventions
+  flutter_riverpod: ^3.3.0        # state management (Notifier / AsyncNotifier only — no legacy providers)
+  dio: ^5.9.0                     # HTTP client with interceptors (auth refresh, idempotency)
+  flutter_dotenv: ^6.0.0          # PUBLIC config only (shipped to browsers!) — see docs/FRONTEND.md
+  go_router: ">=17.0.0 <19.0.0"     # declarative routing, deep links, adaptive shell
+  flutter_form_builder: ">=10.2.0 <12.0.0" # forms
+  form_builder_validators: ^11.1.0
+  permission_handler: ^12.0.1     # runtime permissions (wrapped by PermissionService)
+
+  # chosen additions
+  flutter_secure_storage: ^10.0.0 # refresh token on mobile (Keychain / Keystore)
+  hive_ce: ^2.11.0                # offline cache + outbox (IndexedDB on web, pure Dart = small)
+  hive_ce_flutter: ^2.3.0
+  connectivity_plus: ^7.0.0       # online/offline detection
+  file_picker: ^10.3.0            # any file type, web + mobile
+  url_launcher: ^6.3.0            # privacy policy / terms links
+  path_provider: ^2.1.5           # data export on mobile
+  web: ^1.1.0                     # data export download on web
+  uuid: ^4.5.1                    # idempotency keys
+  material_ui: 1.11.1
+  cupertino_ui: 1.1.7
+  cupertino_icons: ^2.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  mocktail: ^1.0.4
+
+flutter:
+  uses-material-design: true
+  generate: true                  # l10n (see l10n.yaml)
+  assets:
+    - env/
+  # Bundle your brand font here (never load fonts from Google at runtime — GDPR):
+  # fonts:
+  #   - family: Inter
+  #     fonts:
+  #       - asset: assets/fonts/Inter-Variable.ttf

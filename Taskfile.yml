@@ -1,0 +1,128 @@
+# Task runner (https://taskfile.dev) — one binary, same commands on Windows, WSL, Linux, macOS, CI.
+# Windows: winget install Task.Task    ·  List everything: task --list
+version: "3"
+
+vars:
+  # On Windows, Docker Engine lives inside WSL (no Docker Desktop) → prefix with `wsl`.
+  DOCKER: '{{if eq OS "windows"}}wsl docker{{else}}docker{{end}}'
+  DEV: "{{.DOCKER}} compose -f infra/compose.dev.yml"
+  TEST_DB: postgres://app:app@localhost:5432/app_test?sslmode=disable
+
+tasks:
+  default:
+    cmds: [task --list]
+    silent: true
+
+  # ---------- first run ----------
+  setup:
+    desc: First-time setup (env files, Go deps, Flutter platforms + deps)
+    cmds:
+      - task: env
+      - cd backend && go mod tidy
+      - cd frontend && flutter create --platforms=web,android,ios --org com.example --project-name app .
+      - cd frontend && flutter pub get
+      - echo "Setup done. Next → task infra:up, then task api (terminal 1) and task web (terminal 2)"
+
+  env:
+    desc: Create backend/.env from the example if missing
+    status: [test -f backend/.env]
+    cmds: [cp backend/.env.example backend/.env]
+
+  secrets:
+    desc: Print fresh production secrets (JWT/DATA keys)
+    dir: backend
+    cmds: [go run ./cmd/app secrets]
+
+  # ---------- local services (Postgres, Mailpit, optional S3) ----------
+  infra:up:
+    desc: Start Postgres + Mailpit (≈300 MB RAM)
+    cmds: ["{{.DEV}} up -d db mailpit"]
+  infra:up:media:
+    desc: Also start local S3 (RustFS) for media uploads
+    cmds: ["{{.DEV}} --profile media up -d"]
+  infra:down:
+    desc: Stop local services (data is kept)
+    cmds: ["{{.DEV}} --profile media down"]
+  infra:reset:
+    desc: Stop local services and DELETE their data
+    prompt: This deletes your local database. Continue?
+    cmds: ["{{.DEV}} --profile media down -v"]
+  db:psql:
+    desc: Open psql on the dev database
+    cmds: ["{{.DEV}} exec db psql -U app -d app"]
+  db:pii-report:
+    desc: List every column tagged as personal data (data map for GDPR records)
+    cmds:
+      - >-
+        {{.DEV}} exec -T db psql -U app -d app -c "SELECT c.relname AS table, a.attname AS column, d.description
+        FROM pg_description d JOIN pg_class c ON c.oid=d.objoid JOIN pg_attribute a ON a.attrelid=c.oid AND a.attnum=d.objsubid
+        WHERE d.description LIKE 'pii=%' ORDER BY 1,2"
+
+  # ---------- run ----------
+  api:
+    desc: Run the Go API (+ embedded worker) on :8080
+    dir: backend
+    cmds: [go run ./cmd/app serve]
+  web:
+    desc: Run Flutter web on http://localhost:5000
+    dir: frontend
+    cmds: [flutter run -d chrome --web-port 5000]
+  mobile:
+    desc: Run on a connected Android device/emulator (emulator reaches your PC at 10.0.2.2)
+    dir: frontend
+    cmds: ["flutter run --dart-define=API_BASE_URL={{.API | default \"http://10.0.2.2:8080\"}}"]
+
+  # ---------- quality ----------
+  test:
+    desc: All fast tests (Go unit + Flutter unit/widget)
+    cmds:
+      - task: test:api:unit
+      - task: test:web
+  test:api:unit:
+    dir: backend
+    cmds: [go test ./...]
+  test:api:
+    desc: Go tests incl. end-to-end API tests against a throwaway DB (needs infra:up)
+    dir: backend
+    cmds:
+      - '{{.DEV}} exec -T db psql -U app -d app -tc "SELECT 1 FROM pg_database WHERE datname=''app_test''" | grep -q 1 || {{.DEV}} exec -T db createdb -U app app_test'
+      - TEST_DATABASE_URL={{.TEST_DB}} go test -count=1 ./...
+  test:web:
+    dir: frontend
+    cmds: [flutter test]
+  test:e2e:
+    desc: Flutter integration test on a device/emulator (flutter devices to list)
+    dir: frontend
+    cmds: [flutter test integration_test]
+  test:e2e:web:
+    desc: Browser e2e (sign up via Mailpit code, create a note). Needs infra:up, `task api`, chromedriver --port=4444
+    dir: frontend
+    cmds:
+      - flutter drive --driver=test_driver/integration_test.dart --target=integration_test/app_test.dart -d chrome --web-port 5000
+      - flutter drive --driver=test_driver/integration_test.dart --target=integration_test/e2e_flow_test.dart -d chrome --web-port 5000
+  test:load:
+    desc: k6 smoke/load test against the local API
+    cmds: ['{{.DOCKER}} run --rm -i --network host grafana/k6 run - < infra/k6/smoke.js']
+  lint:
+    desc: Static analysis + vulnerability scan
+    cmds:
+      - cd backend && go vet ./...
+      - cd backend && go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+      - cd frontend && flutter analyze
+  fmt:
+    cmds: [cd backend && gofmt -w ., cd frontend && dart format lib test]
+
+  # ---------- build ----------
+  build:web:
+    desc: Production web build (Wasm + self-hosted engine)
+    dir: frontend
+    cmds: [flutter build web --release --wasm --no-web-resources-cdn --dart-define=ENV=prod]
+  build:apk:
+    dir: frontend
+    cmds: [flutter build appbundle --release --dart-define=ENV=prod --obfuscate --split-debug-info=build/symbols]
+  build:images:
+    desc: Build the three production images locally
+    cmds:
+      - "{{.DOCKER}} build --target api -t app/api backend"
+      - "{{.DOCKER}} build --target worker -t app/worker backend"
+      - "{{.DOCKER}} build -f infra/web.Dockerfile -t app/web ."

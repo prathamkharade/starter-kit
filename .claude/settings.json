@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(task *)",
+      "Bash(go test *)",
+      "Bash(go vet *)",
+      "Bash(go build *)",
+      "Bash(go mod tidy)",
+      "Bash(gofmt *)",
+      "Bash(flutter test *)",
+      "Bash(flutter analyze *)",
+      "Bash(flutter pub get)",
+      "Bash(dart format *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)"
+    ],
+    "deny": [
+      "Read(./backend/.env)",
+      "Read(./infra/.env.prod)",
+      "Read(./frontend/build/**)",
+      "Read(./frontend/.dart_tool/**)",
+      "Read(./frontend/lib/l10n/gen/**)",
+      "Read(./frontend/pubspec.lock)",
+      "Read(./backend/go.sum)",
+      "Bash(git push --force *)",
+      "Bash(rm -rf *)"
+    ]
+  }
+}

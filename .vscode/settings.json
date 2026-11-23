@@ -1,0 +1,9 @@
+{
+  "files.eol": "\n",
+  "editor.formatOnSave": true,
+  "go.lintOnSave": "package",
+  "[dart]": { "editor.rulers": [120], "editor.defaultFormatter": "Dart-Code.dart-code" },
+  "dart.lineLength": 120,
+  "files.exclude": { "**/.dart_tool": true, "**/build": true },
+  "search.exclude": { "**/.dart_tool": true, "**/build": true, "frontend/lib/l10n/gen": true, "**/*.lock": true }
+}

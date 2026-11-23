@@ -1,0 +1,12 @@
+{
+  "recommendations": [
+    "anthropic.claude-code",
+    "golang.go",
+    "dart-code.flutter",
+    "dart-code.dart-code",
+    "ms-vscode-remote.remote-wsl",
+    "task.vscode-task",
+    "redhat.vscode-yaml",
+    "editorconfig.editorconfig"
+  ]
+}

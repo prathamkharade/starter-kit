@@ -1,0 +1,57 @@
+# Local development services ONLY (the API and Flutter run natively — faster
+# and lighter on a low-end laptop). Started by `task infra:up`.
+#   Postgres  localhost:5432 (app/app)
+#   Mailpit   SMTP localhost:1025 · inbox UI http://localhost:8025
+#   RustFS    S3 API localhost:9000 · console http://localhost:9001   (profile "media")
+# Ports bind to 127.0.0.1 so nothing is exposed to your Wi-Fi network.
+name: app-dev
+
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+    # Small-footprint tuning for laptops
+    command: >
+      postgres -c shared_buffers=64MB -c work_mem=4MB -c max_connections=40
+               -c synchronous_commit=off -c log_min_duration_statement=250
+    ports: ["127.0.0.1:${DB_PORT:-5432}:5432"]   # set DB_PORT if a local Postgres already uses 5432
+    volumes: [pgdata:/var/lib/postgresql]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d app"]
+      interval: 5s
+      retries: 10
+    mem_limit: 256m
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports: ["127.0.0.1:1025:1025", "127.0.0.1:8025:8025"]
+    environment:
+      MP_MAX_MESSAGES: 500
+      MP_API_CORS: "*"   # lets the web e2e test (integration_test/e2e_flow_test.dart) read OTP codes; dev only, bound to 127.0.0.1
+    mem_limit: 64m
+    restart: unless-stopped
+
+  # S3-compatible storage for media uploads (MinIO's images were withdrawn in 2026).
+  s3:
+    image: rustfs/rustfs:latest
+    profiles: [media]
+    ports: ["127.0.0.1:9000:9000", "127.0.0.1:9001:9001"]
+    environment:
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: 0.0.0.0:9000
+      RUSTFS_CONSOLE_ADDRESS: 0.0.0.0:9001
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_CORS_ALLOWED_ORIGINS: "*"
+      RUSTFS_ACCESS_KEY: minioadmin
+      RUSTFS_SECRET_KEY: minioadmin
+    volumes: [s3data:/data]
+    mem_limit: 256m
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  s3data:

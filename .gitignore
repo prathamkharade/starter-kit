@@ -1,0 +1,35 @@
+# secrets — never commit
+.env
+*.env.local
+infra/.env.prod
+infra/.env
+backup-key.txt
+*.pem
+*.key
+
+# backend
+backend/tmp/
+backend/coverage.*
+*.test
+
+# flutter
+frontend/.dart_tool/
+frontend/build/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/lib/l10n/gen/
+frontend/android/key.properties
+frontend/android/app/*.jks
+frontend/ios/Pods/
+**/*.iml
+
+# os / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# claude code: local (personal) settings stay out of git; shared ones are committed
+.claude/settings.local.json

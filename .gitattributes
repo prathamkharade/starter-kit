@@ -1,0 +1,9 @@
+# Force LF everywhere so shell scripts and Dockerfiles written on Windows still run on Linux servers.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary
+*.jks binary
+*.ttf binary
+*.otf binary
+*.woff2 binary
