@@ -22,14 +22,14 @@ dependencies:
   go_router: ">=17.0.0 <19.0.0"     # declarative routing, deep links, adaptive shell
   flutter_form_builder: ">=10.2.0 <12.0.0" # forms
   form_builder_validators: ^11.1.0
-  permission_handler: ^12.0.1     # runtime permissions (wrapped by PermissionService)
+  permission_handler: ^13.0.2     # runtime permissions (wrapped by PermissionService)
 
   # chosen additions
-  flutter_secure_storage: ^10.0.0 # refresh token on mobile (Keychain / Keystore)
+  flutter_secure_storage: ^11.2.0 # refresh token on mobile (Keychain / Keystore)
   hive_ce: ^2.11.0                # offline cache + outbox (IndexedDB on web, pure Dart = small)
   hive_ce_flutter: ^2.3.0
-  connectivity_plus: ^7.0.0       # online/offline detection
-  file_picker: ^10.3.0            # any file type, web + mobile
+  connectivity_plus: ^7.3.2       # online/offline detection
+  file_picker: ^13.4.1            # any file type, web + mobile
   url_launcher: ^6.3.0            # privacy policy / terms links
   path_provider: ^2.1.5           # data export on mobile
   web: ^1.1.0                     # data export download on web
